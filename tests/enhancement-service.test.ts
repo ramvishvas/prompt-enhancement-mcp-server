@@ -89,6 +89,24 @@ describe("EnhancementService", () => {
     expect(callArgs).toBe("Improve: test");
   });
 
+  it("throws when inline template is missing ${userInput} placeholder", async () => {
+    await expect(
+      service.enhance({
+        text: "test",
+        template: "No placeholder here",
+      })
+    ).rejects.toThrow("Template must contain the ${userInput} placeholder");
+  });
+
+  it("throws when config template is missing ${userInput} placeholder", async () => {
+    config.templates = { default: "Bad template without placeholder" };
+    service = new EnhancementService(config);
+
+    await expect(service.enhance({ text: "test" })).rejects.toThrow(
+      "Template must contain the ${userInput} placeholder"
+    );
+  });
+
   it("includes context in prompt", async () => {
     await service.enhance({
       text: "continue this",

@@ -22,6 +22,13 @@ export class EnhancementService {
       options.template ||
       this.config.templates?.default ||
       DEFAULT_ENHANCE_TEMPLATE;
+
+    if (!templateStr.includes("${userInput}")) {
+      throw new Error(
+        "Template must contain the ${userInput} placeholder"
+      );
+    }
+
     const prompt = templateStr.replace("${userInput}", input);
 
     // 3. Get provider, respecting model override

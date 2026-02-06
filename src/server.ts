@@ -11,6 +11,36 @@ import { loadConfig } from "./config.js";
 import { EnhanceOptions } from "./types.js";
 import { logger } from "./utils/logger.js";
 
+const MAX_TEXT_LENGTH = 100_000;
+
+function sanitizeErrorMessage(error: unknown): string {
+  if (error instanceof McpError) {
+    return error.message;
+  }
+
+  const message =
+    error instanceof Error ? error.message : String(error);
+
+  // Remove potential API keys (sk-..., key-..., etc.)
+  let sanitized = message.replace(
+    /\b(sk-|key-|api-|bearer\s+)[a-zA-Z0-9_-]{8,}\b/gi,
+    "[REDACTED]"
+  );
+
+  // Remove URLs that might expose internal endpoints
+  sanitized = sanitized.replace(
+    /https?:\/\/[^\s)>"']+/gi,
+    "[URL_REDACTED]"
+  );
+
+  // Cap length to prevent accidental data dumps
+  if (sanitized.length > 500) {
+    sanitized = sanitized.slice(0, 500) + "... (truncated)";
+  }
+
+  return sanitized;
+}
+
 export async function startServer(): Promise<void> {
   const config = loadConfig();
   const enhancementService = new EnhancementService(config);
@@ -40,6 +70,7 @@ export async function startServer(): Promise<void> {
             text: {
               type: "string",
               description: "The prompt text to enhance",
+              maxLength: MAX_TEXT_LENGTH,
             },
             provider: {
               type: "string",
@@ -103,6 +134,13 @@ export async function startServer(): Promise<void> {
       );
     }
 
+    if (args.text.length > MAX_TEXT_LENGTH) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        `The 'text' parameter exceeds the maximum length of ${MAX_TEXT_LENGTH} characters`
+      );
+    }
+
     try {
       const result = await enhancementService.enhance(args);
 
@@ -119,8 +157,11 @@ export async function startServer(): Promise<void> {
         },
       };
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : String(error);
+      if (error instanceof McpError) {
+        throw error;
+      }
+
+      const message = sanitizeErrorMessage(error);
       logger.error(`Enhancement failed: ${message}`);
 
       return {

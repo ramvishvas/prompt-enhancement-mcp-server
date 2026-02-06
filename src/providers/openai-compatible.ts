@@ -19,6 +19,33 @@ export class OpenAiCompatibleProvider implements PromptEnhancementProvider {
     this.model = config.model || "gpt-4o";
     this.temperature = config.temperature ?? 0.7;
     this.maxTokens = config.maxTokens ?? 4096;
+
+    // Validate baseUrl if provided
+    if (config.baseUrl) {
+      try {
+        const url = new URL(config.baseUrl);
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          throw new Error(
+            `Invalid baseUrl protocol "${url.protocol}" for provider "${name}". Only http: and https: are allowed.`
+          );
+        }
+      } catch (error) {
+        if (error instanceof TypeError) {
+          throw new Error(
+            `Invalid baseUrl for provider "${name}": not a valid URL`
+          );
+        }
+        throw error;
+      }
+    }
+
+    // Require API key for named providers (openai-compatible may run without one, e.g. Ollama)
+    if (!config.apiKey && (name === "openai" || name === "openrouter")) {
+      throw new Error(
+        `API key is required for provider "${name}". Set the ${name === "openai" ? "OPENAI_API_KEY" : "OPENROUTER_API_KEY"} environment variable.`
+      );
+    }
+
     this.client = new OpenAI({
       apiKey: config.apiKey || "",
       baseURL: config.baseUrl,

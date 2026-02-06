@@ -95,4 +95,66 @@ describe("OpenAiCompatibleProvider", () => {
     );
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
+
+  // baseUrl validation tests
+  it("rejects invalid baseUrl", () => {
+    expect(
+      () =>
+        new OpenAiCompatibleProvider("test", {
+          apiKey: "test",
+          baseUrl: "not-a-url",
+        })
+    ).toThrow("not a valid URL");
+  });
+
+  it("rejects non-http baseUrl protocols", () => {
+    expect(
+      () =>
+        new OpenAiCompatibleProvider("test", {
+          apiKey: "test",
+          baseUrl: "file:///etc/passwd",
+        })
+    ).toThrow("Only http: and https: are allowed");
+  });
+
+  it("accepts valid https baseUrl", () => {
+    const p = new OpenAiCompatibleProvider("test", {
+      apiKey: "test",
+      baseUrl: "https://api.example.com/v1",
+    });
+    expect(p.name).toBe("test");
+  });
+
+  it("accepts valid http baseUrl for local endpoints", () => {
+    const p = new OpenAiCompatibleProvider("test", {
+      apiKey: "test",
+      baseUrl: "http://localhost:11434/v1",
+    });
+    expect(p.name).toBe("test");
+  });
+
+  // API key requirement tests
+  it("throws when openai provider has no API key", () => {
+    expect(
+      () => new OpenAiCompatibleProvider("openai", { model: "gpt-4o" })
+    ).toThrow('API key is required for provider "openai"');
+  });
+
+  it("throws when openrouter provider has no API key", () => {
+    expect(
+      () =>
+        new OpenAiCompatibleProvider("openrouter", {
+          model: "test",
+          baseUrl: "https://openrouter.ai/api/v1",
+        })
+    ).toThrow('API key is required for provider "openrouter"');
+  });
+
+  it("allows openai-compatible provider without API key", () => {
+    const p = new OpenAiCompatibleProvider("openai-compatible", {
+      model: "llama3",
+      baseUrl: "http://localhost:11434/v1",
+    });
+    expect(p.name).toBe("openai-compatible");
+  });
 });

@@ -13,11 +13,14 @@ vi.mock("../src/config.js", () => ({
 }));
 
 // Mock the providers module
+const { mockCompletePrompt } = vi.hoisted(() => ({
+  mockCompletePrompt: vi.fn().mockResolvedValue("Enhanced prompt text"),
+}));
 vi.mock("../src/providers/index.js", () => ({
   createProvider: vi.fn().mockReturnValue({
     name: "anthropic",
     model: "test-model",
-    completePrompt: vi.fn().mockResolvedValue("Enhanced prompt text"),
+    completePrompt: mockCompletePrompt,
   }),
 }));
 
@@ -57,6 +60,7 @@ import { startServer } from "../src/server.js";
 describe("MCP Server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCompletePrompt.mockResolvedValue("Enhanced prompt text");
   });
 
   it("starts and connects to transport", async () => {
@@ -134,5 +138,49 @@ describe("MCP Server", () => {
         params: { name: "enhance_prompt", arguments: {} },
       })
     ).rejects.toThrow("'text' parameter is required");
+  });
+
+  it("CallTool returns error for text exceeding max length", async () => {
+    await startServer();
+
+    const callToolHandler = mockSetRequestHandler.mock.calls.find(
+      ([schema]: [string]) => schema === "CallToolRequestSchema"
+    )?.[1];
+
+    await expect(
+      callToolHandler({
+        params: {
+          name: "enhance_prompt",
+          arguments: { text: "x".repeat(100_001) },
+        },
+      })
+    ).rejects.toThrow("exceeds the maximum length");
+  });
+
+  it("CallTool sanitizes error messages", async () => {
+    mockCompletePrompt.mockRejectedValue(
+      new Error(
+        "Request failed: POST https://api.openai.com/v1/chat/completions with key sk-abc123456789xyz"
+      )
+    );
+
+    await startServer();
+
+    const callToolHandler = mockSetRequestHandler.mock.calls.find(
+      ([schema]: [string]) => schema === "CallToolRequestSchema"
+    )?.[1];
+
+    const result = await callToolHandler({
+      params: {
+        name: "enhance_prompt",
+        arguments: { text: "test prompt" },
+      },
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).not.toContain("api.openai.com");
+    expect(result.content[0].text).not.toContain("sk-abc123456789xyz");
+    expect(result.content[0].text).toContain("[REDACTED]");
+    expect(result.content[0].text).toContain("[URL_REDACTED]");
   });
 });
