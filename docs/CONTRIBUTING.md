@@ -104,24 +104,20 @@ npx vitest run --coverage
 
 #### Mocking a Provider SDK
 
-Each provider test mocks its SDK at the module level:
+Each provider test mocks its SDK at the module level. **Important:** Vitest v4 requires class syntax (not arrow functions) for mocks that are used as constructors with `new`:
 
 ```typescript
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock the SDK BEFORE importing the provider
-vi.mock("my-sdk", () => {
-  const mockMethod = vi.fn();
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      someMethod: mockMethod,
-    })),
-    __mockMethod: mockMethod,  // Export for test access
-  };
-});
+// Define mock functions BEFORE vi.mock() so they are hoisted correctly
+const mockMethod = vi.fn();
 
-// Import the mock accessor
-const mockMethod = (await import("my-sdk") as any).__mockMethod;
+// Mock the SDK BEFORE importing the provider - use class syntax for vitest v4
+vi.mock("my-sdk", () => ({
+  default: class MockMySDK {
+    someMethod = mockMethod;
+  },
+}));
 
 describe("MyProvider", () => {
   beforeEach(() => {
@@ -136,6 +132,8 @@ describe("MyProvider", () => {
   });
 });
 ```
+
+> **Note:** In vitest v4, `vi.fn().mockImplementation(() => ({...}))` can no longer be used as a constructor. Always use `class` syntax when mocking classes/constructors.
 
 #### Testing the Enhancement Service
 
@@ -183,6 +181,8 @@ vi.mocked(fs.existsSync).mockReturnValue(false);
 
 - Use `vi.clearAllMocks()` in `beforeEach` to prevent state leaking between tests
 - Mock SDK modules at the top of the file, before any imports from the code under test
+- **Use class syntax for constructor mocks** (vitest v4 requirement -- arrow functions are not constructable)
+- Define mock functions (e.g. `const mockCreate = vi.fn()`) at module scope, before `vi.mock()`, so they can be referenced in class property initializers
 - Test both success and error paths
 - Test retry behavior for providers (transient errors succeed on retry, auth errors fail immediately)
 - Use `(error as any).status = 401` to test HTTP status-based error handling

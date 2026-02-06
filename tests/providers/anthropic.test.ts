@@ -1,21 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AnthropicProvider } from "../../src/providers/anthropic.js";
 
-// Mock the Anthropic SDK
-vi.mock("@anthropic-ai/sdk", () => {
-  const mockCreate = vi.fn();
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      messages: { create: mockCreate },
-    })),
-    __mockCreate: mockCreate,
-  };
-});
+const mockCreate = vi.fn();
 
-import Anthropic from "@anthropic-ai/sdk";
-
-// Access the mock create function
-const mockCreate = (await import("@anthropic-ai/sdk") as any).__mockCreate;
+// Mock the Anthropic SDK - use class syntax for vitest v4 compatibility
+vi.mock("@anthropic-ai/sdk", () => ({
+  default: class MockAnthropic {
+    messages = { create: mockCreate };
+  },
+}));
 
 describe("AnthropicProvider", () => {
   let provider: AnthropicProvider;

@@ -21,19 +21,22 @@ vi.mock("../src/providers/index.js", () => ({
   }),
 }));
 
-// Mock the MCP SDK server
+// Mock the MCP SDK server - use class syntax for vitest v4 compatibility
 const mockConnect = vi.fn();
 const mockSetRequestHandler = vi.fn();
 
 vi.mock("@modelcontextprotocol/sdk/server/index.js", () => ({
-  Server: vi.fn().mockImplementation(() => ({
-    connect: mockConnect,
-    setRequestHandler: mockSetRequestHandler,
-  })),
+  Server: class MockServer {
+    connect = mockConnect;
+    setRequestHandler = mockSetRequestHandler;
+    constructor() {}
+  },
 }));
 
 vi.mock("@modelcontextprotocol/sdk/server/stdio.js", () => ({
-  StdioServerTransport: vi.fn(),
+  StdioServerTransport: class MockStdioServerTransport {
+    constructor() {}
+  },
 }));
 
 vi.mock("@modelcontextprotocol/sdk/types.js", () => ({

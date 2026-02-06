@@ -3,13 +3,11 @@ import { GeminiProvider } from "../../src/providers/gemini.js";
 
 const mockGenerateContent = vi.fn();
 
-// Mock the Google Generative AI SDK
-vi.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-    getGenerativeModel: vi.fn().mockReturnValue({
-      generateContent: mockGenerateContent,
-    }),
-  })),
+// Mock the new @google/genai SDK - use class syntax for vitest v4 compatibility
+vi.mock("@google/genai", () => ({
+  GoogleGenAI: class MockGoogleGenAI {
+    models = { generateContent: mockGenerateContent };
+  },
 }));
 
 describe("GeminiProvider", () => {
@@ -41,19 +39,26 @@ describe("GeminiProvider", () => {
 
   it("calls Gemini API and returns text", async () => {
     mockGenerateContent.mockResolvedValue({
-      response: { text: () => "Enhanced result" },
+      text: "Enhanced result",
     });
 
     const result = await provider.completePrompt("test prompt");
     expect(result).toBe("Enhanced result");
-    expect(mockGenerateContent).toHaveBeenCalledWith("test prompt");
+    expect(mockGenerateContent).toHaveBeenCalledWith({
+      model: "gemini-2.0-flash",
+      contents: "test prompt",
+      config: {
+        temperature: 0.5,
+        maxOutputTokens: 2048,
+      },
+    });
   });
 
   it("retries on transient errors", async () => {
     mockGenerateContent
       .mockRejectedValueOnce(new Error("timeout"))
       .mockResolvedValue({
-        response: { text: () => "Success after retry" },
+        text: "Success after retry",
       });
 
     const result = await provider.completePrompt("test");

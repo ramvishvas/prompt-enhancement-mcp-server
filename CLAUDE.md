@@ -16,7 +16,7 @@ src/providers/index.ts              → createProvider() factory. Resolves confi
 src/providers/base-provider.ts      → withRetry() -- exponential backoff (1s, 2s, 4s). Skips retry on 401/403/400.
 src/providers/anthropic.ts          → AnthropicProvider. Uses @anthropic-ai/sdk.
 src/providers/openai-compatible.ts  → OpenAiCompatibleProvider. Base class for OpenAI, OpenRouter, any OpenAI-format API.
-src/providers/gemini.ts             → GeminiProvider. Uses @google/generative-ai. Requires API key.
+src/providers/gemini.ts             → GeminiProvider. Uses @google/genai. Requires API key.
 src/utils/logger.ts                 → Logs to stderr. Level controlled by PROMPT_ENHANCER_LOG_LEVEL env var.
 ```
 
@@ -93,7 +93,7 @@ npm run dev       # Watch mode
 - `@modelcontextprotocol/sdk` -- MCP protocol (server, transport, schemas)
 - `@anthropic-ai/sdk` -- Anthropic Claude API
 - `openai` -- OpenAI API (also used for OpenRouter and openai-compatible)
-- `@google/generative-ai` -- Google Gemini API
+- `@google/genai` -- Google Gemini API
 - `vitest` -- Test runner (dev only)
 
 ## Important Constraints
@@ -107,6 +107,7 @@ npm run dev       # Watch mode
 ## Test Patterns
 
 - Provider SDKs are mocked at module level with `vi.mock()`
+- **Vitest v4**: Use class syntax (not arrow functions) for constructor mocks. Define mock fns at module scope before `vi.mock()`.
 - Use `vi.clearAllMocks()` in `beforeEach` to prevent state leaking
 - Test retry behavior: mock first call to reject, second to resolve
 - Test non-retryable errors: set `(error as any).status = 401`

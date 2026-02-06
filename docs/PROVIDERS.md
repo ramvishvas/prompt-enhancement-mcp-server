@@ -21,7 +21,7 @@ interface PromptEnhancementProvider {
 ```
 PromptEnhancementProvider (interface)
 ├── AnthropicProvider          (standalone, uses @anthropic-ai/sdk)
-├── GeminiProvider             (standalone, uses @google/generative-ai)
+├── GeminiProvider             (standalone, uses @google/genai)
 └── OpenAiCompatibleProvider   (base class, uses openai SDK)
     ├── "openai"               (instance with default OpenAI base URL)
     ├── "openrouter"           (instance with OpenRouter base URL)
@@ -105,7 +105,7 @@ Same API call and response extraction as OpenAI. The only difference is the `bas
 |---|---|
 | **File** | `src/providers/gemini.ts` |
 | **Class** | `GeminiProvider` |
-| **SDK** | `@google/generative-ai` |
+| **SDK** | `@google/genai` |
 | **Env var** | `GEMINI_API_KEY` |
 | **Default model** | `gemini-2.0-flash` |
 | **Default temp** | `0.7` |
@@ -114,17 +114,17 @@ Same API call and response extraction as OpenAI. The only difference is the `bas
 
 **API call:**
 ```typescript
-const model = client.getGenerativeModel({
+const response = await client.models.generateContent({
   model: this.model,
-  generationConfig: {
+  contents: prompt,
+  config: {
     temperature: this.temperature,
-    maxOutputTokens: this.maxTokens,  // Note: different param name
+    maxOutputTokens: this.maxTokens,
   },
 });
-const result = await model.generateContent(prompt);
 ```
 
-**Response extraction:** `result.response.text()`
+**Response extraction:** `response.text ?? ""`
 
 ---
 
@@ -303,18 +303,14 @@ Create `tests/providers/my-provider.test.ts`:
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MyProvider } from "../../src/providers/my-provider.js";
 
-// Mock your SDK
-vi.mock("my-provider-sdk", () => {
-  const mockGenerate = vi.fn();
-  return {
-    MySDKClient: vi.fn().mockImplementation(() => ({
-      generate: mockGenerate,
-    })),
-    __mockGenerate: mockGenerate,
-  };
-});
+const mockGenerate = vi.fn();
 
-const mockGenerate = (await import("my-provider-sdk") as any).__mockGenerate;
+// Mock your SDK - use class syntax for vitest v4 compatibility
+vi.mock("my-provider-sdk", () => ({
+  MySDKClient: class MockMySDKClient {
+    generate = mockGenerate;
+  },
+}));
 
 describe("MyProvider", () => {
   let provider: MyProvider;

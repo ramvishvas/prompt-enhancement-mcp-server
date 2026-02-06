@@ -1,18 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OpenAiCompatibleProvider } from "../../src/providers/openai-compatible.js";
 
-// Mock the OpenAI SDK
-vi.mock("openai", () => {
-  const mockCreate = vi.fn();
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      chat: { completions: { create: mockCreate } },
-    })),
-    __mockCreate: mockCreate,
-  };
-});
+const mockCreate = vi.fn();
 
-const mockCreate = (await import("openai") as any).__mockCreate;
+// Mock the OpenAI SDK - use class syntax for vitest v4 compatibility
+vi.mock("openai", () => ({
+  default: class MockOpenAI {
+    chat = { completions: { create: mockCreate } };
+  },
+}));
 
 describe("OpenAiCompatibleProvider", () => {
   let provider: OpenAiCompatibleProvider;

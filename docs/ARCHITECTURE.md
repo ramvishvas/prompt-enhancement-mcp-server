@@ -94,7 +94,7 @@ Handles external API communication:
 - `base-provider.ts` - Shared `withRetry()` function with exponential backoff
 - `openai-compatible.ts` - Base class for OpenAI-format APIs (OpenAI, OpenRouter, Ollama, etc.)
 - `anthropic.ts` - Anthropic Claude SDK integration
-- `gemini.ts` - Google Generative AI SDK integration
+- `gemini.ts` - Google GenAI SDK integration
 - `index.ts` - Factory function that resolves config and instantiates the right provider
 
 ### 5. Configuration Layer (`config.ts`)

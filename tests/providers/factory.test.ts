@@ -2,29 +2,39 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createProvider } from "../../src/providers/index.js";
 import { Config } from "../../src/types.js";
 
-// Mock all provider constructors
+// Mock all provider constructors - use class syntax for vitest v4 compatibility
 vi.mock("../../src/providers/anthropic.js", () => ({
-  AnthropicProvider: vi.fn().mockImplementation((config) => ({
-    name: "anthropic",
-    model: config.model,
-    completePrompt: vi.fn(),
-  })),
+  AnthropicProvider: class MockAnthropicProvider {
+    name = "anthropic";
+    model: string;
+    completePrompt = vi.fn();
+    constructor(config: any) {
+      this.model = config.model;
+    }
+  },
 }));
 
 vi.mock("../../src/providers/openai-compatible.js", () => ({
-  OpenAiCompatibleProvider: vi.fn().mockImplementation((name, config) => ({
-    name,
-    model: config.model,
-    completePrompt: vi.fn(),
-  })),
+  OpenAiCompatibleProvider: class MockOpenAiCompatibleProvider {
+    name: string;
+    model: string;
+    completePrompt = vi.fn();
+    constructor(name: string, config: any) {
+      this.name = name;
+      this.model = config.model;
+    }
+  },
 }));
 
 vi.mock("../../src/providers/gemini.js", () => ({
-  GeminiProvider: vi.fn().mockImplementation((config) => ({
-    name: "gemini",
-    model: config.model,
-    completePrompt: vi.fn(),
-  })),
+  GeminiProvider: class MockGeminiProvider {
+    name = "gemini";
+    model: string;
+    completePrompt = vi.fn();
+    constructor(config: any) {
+      this.model = config.model;
+    }
+  },
 }));
 
 describe("createProvider factory", () => {
