@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -10,6 +11,9 @@ import { EnhancementService } from "./services/enhancement-service.js";
 import { loadConfig } from "./config.js";
 import { EnhanceOptions } from "./types.js";
 import { logger } from "./utils/logger.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
 
 const MAX_TEXT_LENGTH = 100_000;
 
@@ -48,7 +52,7 @@ export async function startServer(): Promise<void> {
   const server = new Server(
     {
       name: "prompt-enhancement-mcp-server",
-      version: "1.0.0",
+      version,
     },
     {
       capabilities: {
