@@ -1,6 +1,6 @@
 {
   "name": "prompt-enhancement-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An MCP server that enhances user prompts using AI providers (Anthropic, OpenAI, OpenRouter, Gemini)",
   "main": "dist/index.js",
   "bin": {
